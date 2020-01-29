@@ -1,0 +1,7 @@
+# Logfile created on 2020-01-29 17:20:10 +0300 by logger.rb/66358
+I, [2020-01-29T17:20:11.832513 #26680]  INFO -- : 
+ Request: GET  /tests?category=Backend
+ Handler: TestsController#index 
+ Parameters: {"category"=>"Backend"}
+ Response: 200 OK ["text/html"] tests/index.html.erb 
+

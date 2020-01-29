@@ -6,7 +6,6 @@ require_relative 'controller'
 
 module Simpler
   class Application
-
     include Singleton
 
     attr_reader :db
@@ -22,16 +21,17 @@ module Simpler
       require_routes
     end
 
-    def routes(&block)
-      @router.instance_eval(&block)
-    end
-
     def call(env)
       route = @router.route_for(env)
       controller = route.controller.new(env)
       action = route.action
-
       make_response(controller, action)
+    rescue NameError
+      page_not_found
+    end
+
+    def routes(&block)
+      @router.instance_eval(&block)
     end
 
     private
@@ -44,15 +44,19 @@ module Simpler
       require Simpler.root.join('config/routes')
     end
 
-    def setup_database
-      database_config = YAML.load_file(Simpler.root.join('config/database.yml'))
-      database_config['database'] = Simpler.root.join(database_config['database'])
-      @db = Sequel.connect(database_config)
-    end
-
     def make_response(controller, action)
       controller.make_response(action)
     end
 
+    def page_not_found
+      [404, { 'Content-Type' => 'text/plain' }, ["Page not found! \n"]]
+    end
+
+    def setup_database
+      database_config = YAML.load_file(Simpler.root.join('config/database.yml'))
+      database_config['database'] = Simpler.root.join(database_config['database'])
+
+      @db = Sequel.connect(database_config)
+    end
   end
 end
