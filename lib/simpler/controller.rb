@@ -1,7 +1,5 @@
 require_relative 'view'
 require_relative 'typeformatter/typeformatter'
-require_relative 'paramsgrabber/paramsgrabber'
-
 module Simpler
   class Controller
     attr_reader :name, :request, :response
@@ -15,7 +13,7 @@ module Simpler
     def make_response(action)
       @request.env['simpler.controller'] = self
       @request.env['simpler.action'] = action
-      @request.env['simpler.resource'] = ParamsGrabber.new(@request.env).grabber
+      @request.env['simpler.resource'] = grabber(@request.env)
       # response_status(201)
       set_default_headers
       send(action)
@@ -27,6 +25,12 @@ module Simpler
 
     def params
       @request.env['simpler.resource']
+    end
+
+    def grabber(env)
+      @env = env['PATH_INFO']
+      arr = @env.split('/')
+      { id: arr[2].to_i }
     end
 
     def response_status(code)
@@ -42,7 +46,7 @@ module Simpler
     end
 
     def create_default_body(template)
-      @request.env['simpler.body']  = template
+      @request.env['simpler.body'] = template
     end
 
     def create_special_body(template)
