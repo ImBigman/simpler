@@ -1,5 +1,5 @@
 require_relative 'view'
-require_relative 'typeformatter/typeformatter'
+require_relative 'renderer/renderer'
 module Simpler
   class Controller
     attr_reader :name, :request, :response
@@ -50,9 +50,9 @@ module Simpler
     end
 
     def create_special_body(template)
-      searching = TypeFormatter.new(template)
-      headers['Content-Type'] = searching.formatter[0]
-      @request.env['simpler.body'] = searching.formatter[1]
+      rendering = Renderer.new(template).call
+      headers['Content-Type'] = rendering.header
+      @request.env['simpler.body'] = rendering.body
     end
 
     def write_response
