@@ -1,8 +1,7 @@
 require_relative 'view'
-
+require_relative 'renderer/renderer'
 module Simpler
   class Controller
-
     attr_reader :name, :request, :response
 
     def initialize(env)
@@ -14,41 +13,63 @@ module Simpler
     def make_response(action)
       @request.env['simpler.controller'] = self
       @request.env['simpler.action'] = action
-
+      @request.env['simpler.resource'] = grabber(@request.env)
+      # response_status(201)
       set_default_headers
       send(action)
       write_response
-
       @response.finish
     end
 
     private
 
-    def extract_name
-      self.class.name.match('(?<name>.+)Controller')[:name].downcase
+    def params
+      @request.env['simpler.resource']
+    end
+
+    def grabber(env)
+      @env = env['PATH_INFO']
+      arr = @env.split('/')
+      { id: arr[2].to_i }
+    end
+
+    def response_status(code)
+      @response.status = code
+    end
+
+    def headers
+      @response
     end
 
     def set_default_headers
       @response['Content-Type'] = 'text/html'
     end
 
-    def write_response
-      body = render_body
+    def create_default_body(template)
+      @request.env['simpler.body'] = template
+    end
 
+    def create_special_body(template)
+      rendering = Renderer.new(template).call
+      headers['Content-Type'] = rendering.header
+      @request.env['simpler.body'] = rendering.body
+    end
+
+    def write_response
+      body = @request.env['simpler.body'] || render_default_body
       @response.write(body)
     end
 
-    def render_body
+    def render_default_body
       View.new(@request.env).render(binding)
     end
 
-    def params
-      @request.params
-    end
-
     def render(template)
-      @request.env['simpler.template'] = template
+      template.is_a?(Hash) ? create_special_body(template) : create_default_body(template)
     end
 
+    def extract_name
+      self.class.name.match('(?<name>.+)Controller')[:name].downcase
+    end
   end
 end
